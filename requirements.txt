@@ -1,0 +1,7 @@
+python-dotenv
+#Scrapy
+urllib3<2
+selenium<4
+#scrapy_selenium
+selenium-requests
+webdrivermanager

@@ -1,0 +1,1 @@
+webdrivermanager firefox --linkpath /usr/local/bin
