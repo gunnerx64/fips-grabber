@@ -9,7 +9,9 @@ from selenium.webdriver.common.by import By
 
 class Program:
     # as per recommendation from @freylis, compile once only
-    CLEANR = re.compile('<.*?>') 
+    CLEANR = re.compile('<.*?>') # удаляет тэги и содержимое
+    CLEANTABS = re.compile('\n\t+') # для замены табов и новых строк
+    CLEANDOUBLEWS = re.compile('\s\s+') # для замены мульти пробелов
 
     def __init__(self):
         self.id = None
@@ -18,6 +20,7 @@ class Program:
         self.title = ''
         self.__referat = ''
         self.__authors = ''
+        self.__owner = ''
     
     @property
     def referat(self):
@@ -33,7 +36,22 @@ class Program:
     
     @authors.setter
     def authors(self, value: str):
-        self.__authors = re.sub(self.CLEANR, '', value).replace(',', ', ').strip()
+        # self.__authors = re.sub(self.CLEANR, '', value)#.replace(',', ', ').strip()
+        s = re.sub(self.CLEANR, '', value)
+        s = re.sub(self.CLEANTABS, ',', s).replace(',', ', ')
+        s = re.sub(self.CLEANDOUBLEWS, ' ', s).strip()
+        self.__authors = s
+    
+    @property
+    def owner(self):
+        return self.__owner
+    
+    @owner.setter
+    def owner(self, value: str):
+        s = re.sub(self.CLEANR, '', value)
+        s = re.sub(self.CLEANTABS, ',', s).replace(',', ', ')
+        s = re.sub(self.CLEANDOUBLEWS, ' ', s).strip(' ,')
+        self.__owner = s
 
 class FipsSpider():
     base_url = 'https://fips.ru/'
@@ -81,12 +99,17 @@ class FipsSpider():
             # res.title = self.driver.find_element_by_xpath('//p[@class="TitAbs"]/b').get_attribute("innerHTML")
             res.title = self.driver.find_element_by_xpath('//div[@id="mainDoc"]/p[1]/b').get_attribute("innerHTML")
             res.referat = self.driver.find_element_by_xpath('//div[@id="mainDoc"]/p[2]').get_attribute("innerHTML")
-            res.authors = self.driver.find_element_by_xpath('//p[contains(text(),"Авторы:")]/b').get_attribute("innerHTML")
+            # res.authors = self.driver.find_element_by_xpath('//p[contains(text(),"Авторы:")]/b').get_attribute("innerHTML")
+            res.authors = self.driver.find_element_by_xpath('//td[@id="bibl"]/p[1]/b').get_attribute("innerHTML")
+            res.owner = self.driver.find_element_by_xpath('//td[@id="bibl"]/p[2]/b').get_attribute("innerHTML")
+            # res.owner = self.driver.find_element_by_xpath('//p[contains(text(),"Правообладател")]/b').get_attribute("innerHTML")
 
         except Exception as e:
             print(f'ошибка парсинга: {e}')
             return None
-        print(f'found {res.__dict__=}')
+        print(f'found {res.id=}')
+        print(f'found {res.authors=}')
+        print(f'found {res.owner=}')
         return res
 
     def fetch_author_programs(self, credentials):
