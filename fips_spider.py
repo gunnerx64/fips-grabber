@@ -140,6 +140,7 @@ class FipsSpider():
     def process_dir(self, dir_name: str) -> None:
         payload = self.parse_dir(dir_name)
         for names in payload:
-            self.fetch(names[:13])
+            self.fetch(names)
         now = datetime.now()
         self.write_output(f'Поиск_{now.year}-{now.month}-{now.day}')
+        print(f'РАБОТА ЗАВЕРШЕНА. Выгружено {len(self.programs)} программ.')
