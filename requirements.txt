@@ -5,4 +5,4 @@ selenium<4
 #scrapy_selenium
 selenium-requests
 webdrivermanager
-xlsxwriter
+openpyxl

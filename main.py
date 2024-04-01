@@ -6,7 +6,8 @@ def main():
     tmp_authors = ['Попов Петр']
 
     fips = FipsSpider()
-    fips.fetch(tmp_authors)
+    fips.process_dir('input')
+    # fips.fetch(tmp_authors)
     now = datetime.now()
     fips.write_output(f'Поиск_{now.year}-{now.month}-{now.day}')
 

@@ -1,6 +1,10 @@
 from typing import List, Any
 from seleniumrequests import Firefox
+from datetime import datetime
 import xlsxwriter
+import openpyxl
+import os
+from pathlib import Path
 
 from program import Program
 class FipsSpider():
@@ -93,28 +97,80 @@ class FipsSpider():
                 next_page.click()
             except Exception:
                 is_done = True
-                
 
     def fetch(self, authors):
         for author in authors:
             self.fetch_author_programs(author)
 
     def write_output(self, file_name: str) -> None:
+        # wb = xlsxwriter.Workbook(file_name + '.xlsx')
+        # ws = wb.add_worksheet()
+        # for idx,title in enumerate(self.output_col_titles):
+        #     ws.write(0, idx, title)
+        # for idx, program in enumerate(self.programs):
+        #     ws.write(idx+1, 0, program.reg_date)
+        #     ws.write(idx+1, 1, program.id)
+        #     ws.write(idx+1, 2, program.kind)
+        #     ws.write(idx+1, 3, program.title)
+        #     ws.write(idx+1, 4, program.authors)
+        #     ws.write(idx+1, 5, program.owner)
+        # wb.close()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(self.output_col_titles)
+        for program in self.programs:
+            ws.append([program.reg_date,
+                       program.id,
+                       program.kind,
+                       program.title,
+                       program.authors,
+                       program.owner])
+        wb.save(file_name + '.xlsx')
 
-        wb = xlsxwriter.Workbook(file_name + '.xlsx')
-        ws = wb.add_worksheet()
-        for idx,title in enumerate(self.output_col_titles):
-            ws.write(0, idx, title)
-            
-        for idx, program in enumerate(self.programs):
-            ws.write(idx+1, 0, program.reg_date)
-            ws.write(idx+1, 1, program.id)
-            ws.write(idx+1, 2, program.kind)
-            ws.write(idx+1, 3, program.title)
-            ws.write(idx+1, 4, program.authors)
-            ws.write(idx+1, 5, program.owner)
+    def parse_dir(self, dir_name: str) -> None:
+        files = []
+        files += [fname for fname in os.listdir(dir_name) if fname.endswith('.xlsx')]
+        print(f'файлы для обработки: {files}')
+        payload = []
+        for file in files:
+            try:
+                wb = openpyxl.load_workbook(Path(dir_name, file))
+                ws = wb.active
+                if ws is None:
+                    continue
+                fios = []
+                fio_col = next((col for col in ws.iter_cols(1, ws.max_column) if 'фио' in str(col[0].value).lower()), None)
+                if fio_col is None:
+                    print(f'файл {file} не содержит ФИО в заголовках!')
+                    continue
+                fio_col_idx = fio_col[0].col_idx
+                print(f'ФИО в стобце {fio_col_idx}')
+                for row in ws.iter_rows(2, ws.max_row):
+                    fio = row[fio_col_idx - 1].value
+                    if fio is None:
+                        break
+                    fio = str(fio).strip()
+                    if fio == '':
+                        print(f'некорректное имя в строке {row[fio_col_idx - 1].row}')
+                        continue
+                    fios += [fio]
+                print(f'добавлено {len(fios)} имен из {file}')
+                payload += [fios]
+            except Exception as e:
+                print(f'ошибка при обработке файла: {e}')
+        return payload
 
-        wb.close()
+
+    def process_dir(self, dir_name: str) -> None:
+        payload = self.parse_dir(dir_name)
+        for names in payload:
+            self.fetch(names[:2])
+        now = datetime.now()
+        self.write_output(f'Поиск_{now.year}-{now.month}-{now.day}')
+
+
+
+        
 
 
 
