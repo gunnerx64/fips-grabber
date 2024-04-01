@@ -1,58 +1,11 @@
-import re
 from typing import List, Any
 # Import any WebDriver class that you would usually import from
 # selenium.webdriver from the seleniumrequests module
 from seleniumrequests import Firefox
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
-# Simple usage with built-in WebDrivers:
 
-class Program:
-    # as per recommendation from @freylis, compile once only
-    CLEANR = re.compile('<.*?>') # удаляет тэги и содержимое
-    CLEANTABS = re.compile('\n\t+') # для замены табов и новых строк
-    CLEANDOUBLEWS = re.compile('\s\s+') # для замены мульти пробелов
-
-    def __init__(self):
-        self.id = None
-        self.kind = 'ПрЭВМ'
-        self.reg_date = ''
-        self.title = ''
-        self.__referat = ''
-        self.__authors = ''
-        self.__owner = ''
-    
-    @property
-    def referat(self):
-        return self.__referat
-    
-    @referat.setter
-    def referat(self, value: str):
-        self.__referat = value.replace('<b>Реферат:</b><br>','')
-
-    @property
-    def authors(self):
-        return self.__authors
-    
-    @authors.setter
-    def authors(self, value: str):
-        # self.__authors = re.sub(self.CLEANR, '', value)#.replace(',', ', ').strip()
-        s = re.sub(self.CLEANR, '', value)
-        s = re.sub(self.CLEANTABS, ',', s).replace(',', ', ')
-        s = re.sub(self.CLEANDOUBLEWS, ' ', s).strip()
-        self.__authors = s
-    
-    @property
-    def owner(self):
-        return self.__owner
-    
-    @owner.setter
-    def owner(self, value: str):
-        s = re.sub(self.CLEANR, '', value)
-        s = re.sub(self.CLEANTABS, ',', s).replace(',', ', ')
-        s = re.sub(self.CLEANDOUBLEWS, ' ', s).strip(' ,')
-        self.__owner = s
-
+from program import Program
 class FipsSpider():
     base_url = 'https://fips.ru/'
     entry_url = 'iiss/db.xhtml'
@@ -65,10 +18,10 @@ class FipsSpider():
         self.driver = Firefox()
         self.driver.get(self.base_url + self.entry_url)
         assert(self.driver.title == 'Информационно-поисковая система')
-        self.driver.find_element(By.ID, 'db-selection-form:j_idt224').click()
+        self.driver.find_element_by_id('db-selection-form:j_idt224').click()
         self.driver.find_element_by_id('db-selection-form:dbsGrid9:0:dbsGrid9checkbox').click()
         self.driver.implicitly_wait(1)
-        self.driver.find_element(By.CLASS_NAME, 'save').click()
+        self.driver.find_element_by_class_name('save').click()
         self.driver.implicitly_wait(3)
 
     @classmethod
@@ -87,7 +40,7 @@ class FipsSpider():
     def add_program(self, program):
         self.programs_seen += 1
         if program.id in self.ids_seen:
-            print(f'SKIP PROGRAM {program.id}')
+            print(f'SKIP DUPLICATE PROGRAM {program.id}')
         else:
             self.programs += [program]
 
@@ -116,19 +69,19 @@ class FipsSpider():
         # переходим на страницу поиска
         self.driver.get(self.base_url + self.search_url)
         # вбиваем имя автора и нажимаем поиск
-        search_input = self.driver.find_element(By.ID, 'fields:5:j_idt122')
+        search_input = self.driver.find_element_by_id('fields:5:j_idt122')
         search_input.clear()
         search_input.send_keys(f'"{credentials}"')
         self.driver.implicitly_wait(1)
-        self.driver.find_element(By.CLASS_NAME, 'save').click()
+        self.driver.find_element_by_class_name('save').click()
         self.driver.implicitly_wait(1)
         try:
             # открываем ссылку на первую программу
-            first_program = self.driver.find_element(By.XPATH, '//a[@class="tr"]')
+            first_program = self.driver.find_element_by_xpath('//a[@class="tr"]')
             #print(f'found first program {first_program}')
             is_done = False
             self.driver.get(first_program.get_attribute("href"))
-        except Exception as e:
+        except Exception:
             print(f'у автора {credentials} программы не найдены')
             is_done = True
 
@@ -138,9 +91,9 @@ class FipsSpider():
             if program is not None:
                 self.add_program(program)
             try:
-                next_page = self.driver.find_element(By.XPATH, '//a[@class="ui-link ui-widget modern-page-next"]')
+                next_page = self.driver.find_element_by_xpath('//a[@class="ui-link ui-widget modern-page-next"]')
                 next_page.click()
-            except Exception as e:
+            except Exception:
                 is_done = True
                 
 
