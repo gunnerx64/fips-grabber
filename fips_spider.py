@@ -1,16 +1,14 @@
 from typing import List, Any
-# Import any WebDriver class that you would usually import from
-# selenium.webdriver from the seleniumrequests module
 from seleniumrequests import Firefox
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
+import xlsxwriter
 
 from program import Program
 class FipsSpider():
     base_url = 'https://fips.ru/'
     entry_url = 'iiss/db.xhtml'
     search_url = 'iiss/search.xhtml'
-    programs = []
+    programs: List[Program] = []
+    output_col_titles = ['дата регистрации','№ свидетельства', 'тип', 'название', 'авторы', 'правообладатель']
     
     def __init__(self):
         self.ids_seen = set()
@@ -100,6 +98,26 @@ class FipsSpider():
     def fetch(self, authors):
         for author in authors:
             self.fetch_author_programs(author)
+
+    def write_output(self, file_name: str) -> None:
+
+        wb = xlsxwriter.Workbook(file_name + '.xlsx')
+        ws = wb.add_worksheet()
+        for idx,title in enumerate(self.output_col_titles):
+            ws.write(0, idx, title)
+            
+        for idx, program in enumerate(self.programs):
+            ws.write(idx+1, 0, program.reg_date)
+            ws.write(idx+1, 1, program.id)
+            ws.write(idx+1, 2, program.kind)
+            ws.write(idx+1, 3, program.title)
+            ws.write(idx+1, 4, program.authors)
+            ws.write(idx+1, 5, program.owner)
+
+        wb.close()
+
+
+
 
 
 
