@@ -19,7 +19,7 @@ class FipsSpider():
         self.driver = Firefox()
         self.driver.get(self.base_url + self.entry_url)
         assert(self.driver.title == 'Информационно-поисковая система')
-        self.driver.find_element_by_id('db-selection-form:j_idt224').click()
+        self.driver.find_element_by_xpath('//form/div[8]').click()
         self.driver.find_element_by_id('db-selection-form:dbsGrid9:0:dbsGrid9checkbox').click()
         self.driver.implicitly_wait(1)
         self.driver.find_element_by_class_name('save').click()
@@ -54,7 +54,7 @@ class FipsSpider():
         # переходим на страницу поиска
         self.driver.get(self.base_url + self.search_url)
         # вбиваем имя автора и нажимаем поиск
-        search_input = self.driver.find_element_by_id('fields:5:j_idt122')
+        search_input = self.driver.find_element_by_xpath('//input[contains(@id,"fields:5")]')
         search_input.clear()
         search_input.send_keys(f'"{credentials}"')
         self.driver.implicitly_wait(1)
