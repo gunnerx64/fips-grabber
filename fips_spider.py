@@ -11,7 +11,7 @@ class FipsSpider():
     entry_url = 'iiss/db.xhtml'
     search_url = 'iiss/search.xhtml'
     programs: List[Program] = []
-    output_col_titles = ['дата регистрации','№ свидетельства', 'тип', 'название', 'авторы', 'правообладатель']
+    output_col_titles = ['дата регистрации','№ свидетельства', 'тип', 'название', 'авторы', 'правообладатель', 'реферат']
     
     def __init__(self):
         self.ids_seen = set()
@@ -103,9 +103,10 @@ class FipsSpider():
                        program.kind,
                        program.title,
                        program.authors,
-                       program.owner])
+                       program.owner,
+                       program.referat])
         wb.save(file_name + '.xlsx')
-
+ 
     def parse_dir(self, dir_name: str) -> None:
         files = []
         files += [fname for fname in os.listdir(dir_name) if fname.endswith('.xlsx')]
@@ -121,7 +122,7 @@ class FipsSpider():
                 fio_col = next((col for col in ws.iter_cols(1, ws.max_column) if 'фио' in str(col[0].value).lower()), None)
                 if fio_col is None:
                     print(f'файл {file} не содержит ФИО в заголовках!')
-                    continue
+                    continue      
                 fio_col_idx = fio_col[0].col_idx
                 print(f'ФИО в стобце {fio_col_idx}')
                 for row in ws.iter_rows(2, ws.max_row):
