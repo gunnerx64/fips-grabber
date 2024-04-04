@@ -10,6 +10,8 @@ if exist %venv%\ (
   python -m venv %venv%
   echo opening %venv% virtual environment..
   call %CD%\%venv%\Scripts\activate.bat
+  echo done. upgrading pip..
+  python -m pip install --upgrade pip
   echo done. installing dependencies..
   python -m pip install -r requirements.txt
 )
