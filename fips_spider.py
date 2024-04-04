@@ -28,8 +28,10 @@ class FipsSpider():
     def add_program(self, program):
         self.programs_seen += 1
         if program.id in self.ids_seen:
-            print(f'пропущена программа {program.id} (уже найдена у другого автора)')
+            pass
+            # print(f'пропущена программа {program.id} (уже найдена у другого автора)')
         else:
+            self.ids_seen.add(program.id)
             self.programs += [program]
 
     def parse_program(self):
