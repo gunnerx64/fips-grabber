@@ -15,7 +15,7 @@ if exist %venv%\ (
   echo done. installing dependencies..
   python -m pip install -r requirements.txt
 )
-
+ 
 echo starting the spider..
 python main.py
 
