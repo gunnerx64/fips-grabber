@@ -1,6 +1,7 @@
 from typing import List, Any
 from seleniumrequests import Firefox
-from datetime import datetime
+from datetime import datetime, timedelta
+from timeit import default_timer as timer
 import openpyxl
 import os
 from pathlib import Path
@@ -15,7 +16,10 @@ class FipsSpider():
     
     def __init__(self):
         self.ids_seen = set()
+        self.start_time = timer()
         self.programs_seen = 0
+        self.authors_seen = 0
+        self.total_authors = 0
         self.driver = Firefox()
         self.driver.get(self.base_url + self.entry_url)
         assert(self.driver.title == 'Информационно-поисковая система')
@@ -52,7 +56,8 @@ class FipsSpider():
         # print(f'found {res.owner=}')
         return res
 
-    def fetch_author_programs(self, credentials):
+    def fetch_author_programs(self, credentials: str):
+        self.authors_seen += 1
         # переходим на страницу поиска
         self.driver.get(self.base_url + self.search_url)
         # вбиваем имя автора и нажимаем поиск
@@ -72,24 +77,22 @@ class FipsSpider():
             # print(f'у автора {credentials} программы не найдены')
             is_done = True
 
-        n = 0
         # в цикле пробегаем по всем страницам
         while not is_done:
             program = self.parse_program()
             if program is not None:
                 self.add_program(program)
-                n += 1
-            print(f'Обработка {credentials} #{n}. В базе {len(self.programs)} уникальных программ (из {self.programs_seen}).', end='\r')
+            progress = f'{(self.authors_seen/self.total_authors):.2f}'
+            speed = f'{((timer() - self.start_time)/self.authors_seen):.1f}'
+            print(f'[{progress}%][{speed} с/авт.][{len(self.programs)} программ в БД] Автор #{self.authors_seen} {credentials.split()[0]} (из {self.total_authors}).', end='\r')
             try:
                 next_page = self.driver.find_element_by_xpath('//a[@class="ui-link ui-widget modern-page-next"]')
                 next_page.click()
             except Exception:
                 is_done = True
-        else:
-            # print(f'\n')
-            pass
 
     def fetch(self, authors):
+        self.start_time = timer()
         for author in authors:
             self.fetch_author_programs(author)
 
@@ -108,6 +111,7 @@ class FipsSpider():
         wb.save(file_name + '.xlsx')
  
     def parse_dir(self, dir_name: str) -> None:
+        self.total_authors = 0
         files = []
         files += [fname for fname in os.listdir(dir_name) if fname.endswith('.xlsx')]
         print(f'файлы для обработки: {files}')
@@ -135,6 +139,7 @@ class FipsSpider():
                         continue
                     fios += [fio]
                 print(f'добавлено {len(fios)} имен из {file}')
+                self.total_authors += len(fios)
                 payload += [fios]
             except Exception as e:
                 print(f'ошибка при обработке файла: {e}')
@@ -142,8 +147,14 @@ class FipsSpider():
 
     def process_dir(self, dir_name: str) -> None:
         payload = self.parse_dir(dir_name)
+        print(f'К обработке {self.total_authors} авторов.')
+        start = timer()
+        total = 0
         for names in payload:
+            total += len(names)
             self.fetch(names)
+        elapsed_time = timer() - start
         now = datetime.now()
         self.write_output(f'Поиск_{now.year}-{now.month}-{now.day}')
-        print(f'РАБОТА ЗАВЕРШЕНА. Выгружено {len(self.programs)} программ.')
+        print(f'\nРАБОТА ЗАВЕРШЕНА. Выгружено {len(self.programs)} программ.')
+        print(f'Время работы {timedelta(seconds=elapsed_time)}. Производительность: {(elapsed_time/self.total_authors):.2f} сек./автор.')
