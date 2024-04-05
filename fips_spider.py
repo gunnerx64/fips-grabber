@@ -83,9 +83,9 @@ class FipsSpider():
             if program is not None:
                 self.add_program(program)
             progress = f'{(self.authors_seen*100/self.total_authors):.2f}'
-            speed = f'{((timer() - self.start_time)/self.authors_seen):.1f}'
+            speed = ((timer() - self.start_time)/self.authors_seen)
             remains = (self.total_authors-self.authors_seen)*speed
-            print(f'[{progress}%][{speed} с/авт.][осталось ~{timedelta(seconds=remains)}][Программ: {len(self.programs)}] Автор #{self.authors_seen} {credentials.split()[0]} (из {self.total_authors}).', end='\r')
+            print(f'[{progress}%][{speed:.1f} с/авт.][осталось ~{timedelta(seconds=remains)}][Программ: {len(self.programs)}] Автор #{self.authors_seen} {credentials.split()[0]} (из {self.total_authors}).', end='\r')
             try:
                 next_page = self.driver.find_element_by_xpath('//a[@class="ui-link ui-widget modern-page-next"]')
                 next_page.click()
