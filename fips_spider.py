@@ -1,10 +1,12 @@
-from typing import List, Any
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from seleniumrequests import Firefox
 from datetime import datetime, timedelta
 from timeit import default_timer as timer
 import openpyxl
 import os
 from pathlib import Path
+from typing import List, Any
+from dotenv import load_dotenv
 
 from program import Program
 class FipsSpider():
@@ -15,12 +17,18 @@ class FipsSpider():
     output_col_titles = ['дата регистрации','№ свидетельства', 'тип', 'название', 'авторы', 'правообладатель', 'реферат']
     
     def __init__(self):
+        # Load the environment variables from the .env file
+        load_dotenv(Path('.') / '.env', verbose=True, override=True)
         self.ids_seen = set()
         self.start_time = timer()
         self.programs_seen = 0
         self.authors_seen = 0
         self.total_authors = 0
-        self.driver = Firefox()
+        firefox_path = os.environ.get('firefox_binary')
+        print(f'{firefox_path=}')
+        assert(firefox_path is not None)
+        firefox_binary = FirefoxBinary(firefox_path)
+        self.driver = Firefox(firefox_binary=firefox_binary)
         self.driver.get(self.base_url + self.entry_url)
         assert(self.driver.title == 'Информационно-поисковая система')
         self.driver.find_element_by_xpath('//form/div[8]').click()
@@ -60,11 +68,12 @@ class FipsSpider():
         self.authors_seen += 1
         # переходим на страницу поиска
         self.driver.get(self.base_url + self.search_url)
+        # ждем загрузки DOM для очистки поля с автором
+        self.driver.implicitly_wait(1)
         # вбиваем имя автора и нажимаем поиск
         search_input = self.driver.find_element_by_xpath('//input[contains(@id,"fields:5")]')
         search_input.clear()
         search_input.send_keys(f'"{credentials}"')
-        self.driver.implicitly_wait(1)
         self.driver.find_element_by_class_name('save').click()
         self.driver.implicitly_wait(1)
         try:
@@ -85,7 +94,7 @@ class FipsSpider():
             progress = f'{(self.authors_seen*100/self.total_authors):.2f}'
             speed = ((timer() - self.start_time)/self.authors_seen)
             remains = (self.total_authors-self.authors_seen)*speed
-            print(f'[{progress}%][{speed:.1f} с/авт.][осталось ~{timedelta(seconds=remains)}][Программ: {len(self.programs)}] Автор #{self.authors_seen} {credentials.split()[0]} (из {self.total_authors}).', end='\r')
+            print(f'[{progress}%]\t[{speed:.1f} с/авт.]\t[осталось ~{timedelta(seconds=remains)}]\t[Программ: {len(self.programs)}]\tАвтор #{self.authors_seen}\t{credentials.split()[0]}\t(из {self.total_authors}).', end='\r')
             try:
                 next_page = self.driver.find_element_by_xpath('//a[@class="ui-link ui-widget modern-page-next"]')
                 next_page.click()
