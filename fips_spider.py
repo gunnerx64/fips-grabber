@@ -28,9 +28,8 @@ class FipsSpider():
         self.total_authors = 0
         firefox_path = os.environ.get('firefox_binary')
         print(f'{firefox_path=}')
-        assert(firefox_path is not None)
-        firefox_binary = FirefoxBinary(firefox_path)
-        self.driver = Firefox(firefox_binary=firefox_binary)
+        #assert(firefox_path is not None)
+        self.driver = Firefox() if firefox_path is None else Firefox(firefox_binary=FirefoxBinary(firefox_path))
         self.programs_skipped = 0
         self.driver.get(self.base_url + self.entry_url)
         assert(self.driver.title == 'Информационно-поисковая система')
