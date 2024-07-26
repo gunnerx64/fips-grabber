@@ -1,14 +1,16 @@
+from typing import List, Any
+from dotenv import load_dotenv
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from seleniumrequests import Firefox
 from datetime import datetime, timedelta
 from timeit import default_timer as timer
+from math import floor
 import openpyxl
 import os
 from pathlib import Path
-from typing import List, Any
-from dotenv import load_dotenv
-
 from program import Program
+from filter import Filter
+
 class FipsSpider():
     base_url = 'https://fips.ru/'
     entry_url = 'iiss/db.xhtml'
@@ -29,6 +31,7 @@ class FipsSpider():
         assert(firefox_path is not None)
         firefox_binary = FirefoxBinary(firefox_path)
         self.driver = Firefox(firefox_binary=firefox_binary)
+        self.programs_skipped = 0
         self.driver.get(self.base_url + self.entry_url)
         assert(self.driver.title == 'Информационно-поисковая система')
         self.driver.find_element_by_xpath('//form/div[8]').click()
@@ -55,7 +58,6 @@ class FipsSpider():
             res.referat = self.driver.find_element_by_xpath('//div[@id="mainDoc"]/p[2]').get_attribute("innerHTML")
             res.authors = self.driver.find_element_by_xpath('//td[@id="bibl"]/p[1]/b').get_attribute("innerHTML")
             res.owner = self.driver.find_element_by_xpath('//td[@id="bibl"]/p[2]/b').get_attribute("innerHTML")
-
         except Exception as e:
             print(f'ошибка обработки: {e}')
             return None
@@ -90,11 +92,19 @@ class FipsSpider():
         while not is_done:
             program = self.parse_program()
             if program is not None:
-                self.add_program(program)
+                # если правообладатель в белом списке, добавляем программу
+                if Filter.is_whitelisted(program.owner):
+                    self.add_program(program)
+                # иначе, если правообладатель не в черном списке, также добавляем программу
+                elif not Filter.is_blacklisted(program.owner):
+                    self.add_program(program)
+                else:
+                    self.programs_skipped += 1
+                    #print(f"пропущена программа: п: {program.owner}, a: {program.authors}")
             progress = f'{(self.authors_seen*100/self.total_authors):.2f}'
             speed = ((timer() - self.start_time)/self.authors_seen)
-            remains = (self.total_authors-self.authors_seen)*speed
-            print(f'[{progress}%]\t[{speed:.1f} с/авт.]\t[осталось ~{timedelta(seconds=remains)}]\t[Программ: {len(self.programs)}]\tАвтор #{self.authors_seen}\t{credentials.split()[0]}\t(из {self.total_authors}).', end='\r')
+            remains = floor((self.total_authors-self.authors_seen)*speed)
+            print(f'[{progress}%][{speed:.1f} с/авт.][осталось ~{timedelta(seconds=remains)}][Программ: {len(self.programs)}][Пропущено: {self.programs_skipped}] Автор #{self.authors_seen} {credentials.split()[0]} (из {self.total_authors}).', end='\r')
             try:
                 next_page = self.driver.find_element_by_xpath('//a[@class="ui-link ui-widget modern-page-next"]')
                 next_page.click()
@@ -103,7 +113,7 @@ class FipsSpider():
 
     def fetch(self, authors):
         self.start_time = timer()
-        for author in authors:
+        for author in authors: 
             self.fetch_author_programs(author)
 
     def write_output(self, file_name: str) -> None:

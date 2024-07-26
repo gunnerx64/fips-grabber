@@ -2,7 +2,7 @@ import re
 
 class Program:
     # as per recommendation from @freylis, compile once only
-    CLEANR = re.compile('<.*?>') # удаляет тэги и содержимое
+    CLEANR = re.compile('<.*?>')  # удаляет тэги и содержимое
     CLEANTABS = re.compile('\n\t+') # для замены табов и новых строк
     CLEANDOUBLEWS = re.compile('\s\s+') # для замены мульти пробелов
 
