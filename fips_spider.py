@@ -1,15 +1,17 @@
-from typing import List, Any
-from dotenv import load_dotenv
+import openpyxl
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from seleniumrequests import Firefox
 from datetime import datetime, timedelta
-from timeit import default_timer as timer
+from dotenv import load_dotenv
 from math import floor
-import openpyxl
 import os
 from pathlib import Path
-from program import Program
+import time
+from timeit import default_timer as timer
+from typing import List, Any
+
 from filter import Filter
+from program import Program
 
 class FipsSpider():
     base_url = 'https://fips.ru/'
@@ -71,12 +73,19 @@ class FipsSpider():
         self.driver.get(self.base_url + self.search_url)
         # ждем загрузки DOM для очистки поля с автором
         self.driver.implicitly_wait(1)
-        # вбиваем имя автора и нажимаем поиск
-        search_input = self.driver.find_element_by_xpath('//input[contains(@id,"fields:5")]')
-        search_input.clear()
-        search_input.send_keys(f'"{credentials}"')
-        self.driver.find_element_by_class_name('save').click()
-        self.driver.implicitly_wait(1)
+        try:
+            # вбиваем имя автора и нажимаем поиск
+            search_input = self.driver.find_element_by_xpath('//input[contains(@id,"fields:5")]')
+            search_input.clear()
+            search_input.send_keys(f'"{credentials}"')
+            self.driver.find_element_by_class_name('save').click()
+            self.driver.implicitly_wait(1)
+        except Exception as e:
+            sleep_time = 5
+            print(f'Ошибка ({e}): не удалось ввести в поиск автора {credentials}, пропускаем его. \
+                  Пауза выполнения программы на {sleep_time} с.')
+            time.sleep(sleep_time)
+
         try:
             # открываем ссылку на первую программу
             first_program = self.driver.find_element_by_xpath('//a[@class="tr"]')
@@ -108,6 +117,7 @@ class FipsSpider():
                 next_page = self.driver.find_element_by_xpath('//a[@class="ui-link ui-widget modern-page-next"]')
                 next_page.click()
             except Exception:
+                # срабатывает, когда не удалось нажать/найти кнопку следующей программы, т.е. поиск закончен
                 is_done = True
 
     def fetch(self, authors):
