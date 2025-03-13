@@ -35,7 +35,7 @@ class FipsSpider():
         self.programs_skipped = 0
         self.driver.get(self.base_url + self.entry_url)
         assert(self.driver.title == 'Информационно-поисковая система')
-        self.driver.find_element_by_xpath('//form/div[8]').click()
+        self.driver.find_element_by_xpath('//form/div[7]').click()
         self.driver.find_element_by_id('db-selection-form:dbsGrid9:0:dbsGrid9checkbox').click()
         self.driver.implicitly_wait(1)
         self.driver.find_element_by_class_name('save').click()
