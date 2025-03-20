@@ -9,9 +9,9 @@ def get_data_from_file(file):
     
 class Filter:
     __blacklist = get_data_from_file('input/blacklist.txt')
-    __blacklist = [re.compile(key, flags=re.IGNORECASE) for key in __blacklist]
+    __blacklist = [re.compile(key.strip(), flags=re.IGNORECASE) for key in __blacklist]
     __whitelist = get_data_from_file('input/whitelist.txt')
-    __whitelist = [re.compile(key, flags=re.IGNORECASE) for key in __whitelist]
+    __whitelist = [re.compile(key.strip(), flags=re.IGNORECASE) for key in __whitelist]
     
     # def __init__(self):
     #     self.__blacklist = get_data_from_file('input/blacklist.txt')
@@ -21,15 +21,19 @@ class Filter:
     
     @staticmethod
     def is_blacklisted(input: str | None) -> bool:
+        if input is None:
+            return False
         for key in Filter.__blacklist:
-            if re.search(key, input):
+            if re.search(key, input.lower()):
                 return True
         return False
     
     @staticmethod
     def is_whitelisted(input: str | None) -> bool:
+        if input is None:
+            return False
         for key in Filter.__whitelist:
-            if re.search(key, input):
+            if re.search(key, input.lower()):
                 return True
         return False
 
