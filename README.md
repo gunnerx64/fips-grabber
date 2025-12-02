@@ -10,7 +10,7 @@ A few things to check out.
 2. Get the latest gecko driver here
 3. Set path in your environment
 
-`export PATH=$PATH:/path/to/directory/of/executable/geckodriver<br>`
+`export PATH=$PATH:/path/to/directory/of/executable/geckodriver`
 
 4. If you intend to skip 3 , you need to amend this in the your script
 
@@ -26,3 +26,10 @@ driver = webdriver.Firefox(firefox_binary=binary)`
 3. В папке input можно создать 2 файла - blacklist.txt и whitelist.txt - для фильтров по черным и белым спискам правообладателей программы. Фильтр - одна строка в файле для regex. Если правообладатель в белом списке программа индексируется, иначе если правообладатель не в черном списке, программа также индексируется, иначе игнорируется.
 4. Запустить программу из 'Run scanner.bat'
 5. Выходной файл будет сохранен в корне программы в формате 'Поиск_дата.xlsx'
+
+# Принудительное скачивание новой версии ПО с гитхаба
+
+```
+git reset --hard master
+git pull
+```
